@@ -82,6 +82,8 @@
               where not exists (select from pg_database where datname = 'replay')\\gexec
             " | psql -h $PGDATA postgres
 
+            sqlx migrate run
+
             fish
           '';
         };
