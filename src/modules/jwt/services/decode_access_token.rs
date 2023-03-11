@@ -1,7 +1,11 @@
-use crate::{infra::{ServiceArgs, config, Service, Resolver}, Error, modules::jwt::{RawJwtAccessToken, JwtAccessToken}};
+use crate::{
+    infra::{config, Resolver, Service, ServiceArgs},
+    modules::jwt::{JwtAccessToken, RawJwtAccessToken},
+    Error,
+};
 
 pub struct DecodeAccessToken {
-    pub raw_jwt: RawJwtAccessToken
+    pub raw_jwt: RawJwtAccessToken,
 }
 
 impl ServiceArgs for DecodeAccessToken {
@@ -10,9 +14,9 @@ impl ServiceArgs for DecodeAccessToken {
 
 async fn execute(
     DecodeAccessToken { raw_jwt }: DecodeAccessToken,
-    jwt_config: config::Jwt
+    jwt_config: config::Jwt,
 ) -> Result<JwtAccessToken, Error> {
-    let signature = jwt_config.access_token_secret;  
+    let signature = jwt_config.access_token_secret;
     JwtAccessToken::decode(raw_jwt, signature)
 }
 

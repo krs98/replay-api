@@ -1,10 +1,9 @@
-use std::sync::Arc;
 use once_cell::sync::OnceCell;
 use sqlx::PgPool;
+use std::sync::Arc;
 
 use crate::modules::{
-    users::resolver::UsersResolver, 
-    auth::resolver::AuthResolver, jwt::resolver::JwtResolver
+    auth::resolver::AuthResolver, jwt::resolver::JwtResolver, users::resolver::UsersResolver 
 };
 
 use super::{config, redis::RedisPool};
@@ -15,13 +14,18 @@ pub struct App {
 }
 
 impl App {
-    pub fn new(jwt_config: config::Jwt, pg_pool: PgPool, redis_pool: RedisPool) -> Self {
+    pub fn new(
+        github_oauth_config: config::GithubOAuth,
+        jwt_config: config::Jwt, 
+        pg_pool: PgPool, 
+        redis_pool: RedisPool
+    ) -> Self {
         App {
             resolver: Resolver {
-                auth_resolver: AuthResolver,
+                auth_resolver: AuthResolver::new(github_oauth_config),
                 jwt_resolver: JwtResolver::new(jwt_config, redis_pool),
                 users_resolver: UsersResolver::new(pg_pool),
-            }
+            },
         }
     }
 }
@@ -38,7 +42,7 @@ impl Resolver {
         Resolver {
             auth_resolver: self.auth_resolver.clone(),
             jwt_resolver: self.jwt_resolver.clone(),
-            users_resolver: self.users_resolver.clone()
+            users_resolver: self.users_resolver.clone(),
         }
     }
 
@@ -52,8 +56,10 @@ pub struct Register<T>(Arc<dyn Fn() -> T + Sync + Send>);
 
 impl<T> Register<T> {
     pub fn once(e: T) -> Self
-    where T: Clone + Send + Sync + 'static {
-       let cell = OnceCell::new();
-       Register(Arc::new(move || cell.get_or_init(|| e.clone()).clone()))
+    where
+        T: Clone + Send + Sync + 'static,
+    {
+        let cell = OnceCell::new();
+        Register(Arc::new(move || cell.get_or_init(|| e.clone()).clone()))
     }
 }

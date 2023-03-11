@@ -1,11 +1,8 @@
 pub mod models;
-mod store;
-pub mod services;
 pub mod resolver;
+pub mod services;
+mod store;
 
-pub use self::{
-    models::*,
-    services::*,
-};
+pub use self::{models::*, services::*};
 
 pub(in crate::modules) use self::store::*;

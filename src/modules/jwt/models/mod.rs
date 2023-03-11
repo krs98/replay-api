@@ -1,6 +1,6 @@
 use chrono::{Duration, Utc};
-use jsonwebtoken::{Header, Algorithm, EncodingKey, Validation, DecodingKey};
-use serde::{Serialize, Deserialize};
+use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation};
+use serde::{Deserialize, Serialize};
 
 use crate::modules::{error::Error, users::Username};
 
@@ -25,13 +25,13 @@ impl RefreshTokenSubject {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AccessTokenClaims {
     pub sub: AccessTokenSubject,
-    pub exp: i64
+    pub exp: i64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RefreshTokenClaims {
     pub sub: RefreshTokenSubject,
-    pub exp: i64
+    pub exp: i64,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -43,31 +43,34 @@ pub struct RawJwtRefreshToken(pub String);
 #[derive(Debug, Clone, Serialize)]
 pub struct JwtAccessToken {
     pub raw: RawJwtAccessToken,
-    pub claims: AccessTokenClaims
+    pub claims: AccessTokenClaims,
 }
 
 #[derive(Debug, Clone, Serialize)]
 pub struct JwtRefreshToken {
     pub raw: RawJwtRefreshToken,
-    pub claims: RefreshTokenClaims
+    pub claims: RefreshTokenClaims,
 }
 
 impl JwtAccessToken {
     pub fn encode(
-        subject: AccessTokenSubject, 
-        duration: Duration, 
-        signature: String
+        subject: AccessTokenSubject,
+        duration: Duration,
+        signature: String,
     ) -> Result<Self, Error> {
         let expiration = Utc::now()
             .checked_add_signed(duration)
             .ok_or(Error::Internal)?
             .timestamp();
 
-        let claims = AccessTokenClaims { sub: subject, exp: expiration };
+        let claims = AccessTokenClaims {
+            sub: subject,
+            exp: expiration,
+        };
         let raw_jwt = encode(&claims, signature)?;
-        let jwt_access_token = JwtAccessToken { 
-            raw: RawJwtAccessToken(raw_jwt), 
-            claims 
+        let jwt_access_token = JwtAccessToken {
+            raw: RawJwtAccessToken(raw_jwt),
+            claims,
         };
 
         Ok(jwt_access_token)
@@ -77,7 +80,7 @@ impl JwtAccessToken {
         let claims = decode::<AccessTokenClaims>(raw_jwt.0.as_str(), signature)?;
         let jwt_access_token = JwtAccessToken {
             raw: raw_jwt,
-            claims
+            claims,
         };
 
         Ok(jwt_access_token)
@@ -87,19 +90,22 @@ impl JwtAccessToken {
 impl JwtRefreshToken {
     pub fn encode(
         subject: RefreshTokenSubject,
-        duration: Duration, 
-        signature: String
+        duration: Duration,
+        signature: String,
     ) -> Result<Self, Error> {
         let expiration = Utc::now()
             .checked_add_signed(duration)
             .ok_or(Error::Internal)?
             .timestamp();
 
-        let claims = RefreshTokenClaims { sub: subject, exp: expiration };
+        let claims = RefreshTokenClaims {
+            sub: subject,
+            exp: expiration,
+        };
         let raw_jwt = encode(&claims, signature)?;
-        let jwt_refresh_token = JwtRefreshToken { 
-            raw: RawJwtRefreshToken(raw_jwt), 
-            claims 
+        let jwt_refresh_token = JwtRefreshToken {
+            raw: RawJwtRefreshToken(raw_jwt),
+            claims,
         };
 
         Ok(jwt_refresh_token)
@@ -107,7 +113,10 @@ impl JwtRefreshToken {
 
     pub fn decode(raw_jwt: RawJwtRefreshToken, signature: String) -> Result<Self, Error> {
         let claims = decode::<RefreshTokenClaims>(raw_jwt.0.as_str(), signature)?;
-        let jwt_refresh_token = JwtRefreshToken { raw: raw_jwt, claims };
+        let jwt_refresh_token = JwtRefreshToken {
+            raw: raw_jwt,
+            claims,
+        };
 
         Ok(jwt_refresh_token)
     }

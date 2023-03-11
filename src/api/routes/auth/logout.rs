@@ -1,6 +1,10 @@
-use axum::{Extension, response::IntoResponse};
+use axum::{response::IntoResponse, Extension};
 
-use crate::{api::extractors::ExtractJwtRefreshToken, infra::{App, Service}, modules::jwt::BlacklistRefreshToken};
+use crate::{
+    api::extractors::ExtractJwtRefreshToken,
+    infra::{App, Service},
+    modules::jwt::BlacklistRefreshToken,
+};
 
 pub async fn logout(
     Extension(app): Extension<App>,
@@ -8,6 +12,7 @@ pub async fn logout(
 ) -> impl IntoResponse {
     let blacklist_refresh_token_service = app.resolver.blacklist_refresh_token_service();
     let blacklist_refresh_token_input = BlacklistRefreshToken { refresh_token };
-    blacklist_refresh_token_service.execute(blacklist_refresh_token_input).await
+    blacklist_refresh_token_service
+        .execute(blacklist_refresh_token_input)
+        .await
 }
-

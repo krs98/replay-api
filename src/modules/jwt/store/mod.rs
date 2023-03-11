@@ -3,9 +3,9 @@ use auto_impl::auto_impl;
 use redis::Commands;
 use tracing::debug;
 
-use crate::{Error, infra::redis::RedisPool};
+use crate::{infra::redis::RedisPool, Error};
 
-use super::{RawJwtRefreshToken, JwtRefreshToken};
+use super::{JwtRefreshToken, RawJwtRefreshToken};
 
 #[async_trait]
 #[auto_impl(&, Arc)]
@@ -16,7 +16,7 @@ pub trait JwtStore {
 
 #[derive(Debug)]
 pub(in crate::modules::jwt) struct RedisJwtStore {
-    pub pool: RedisPool
+    pub pool: RedisPool,
 }
 
 impl RedisJwtStore {
@@ -29,7 +29,7 @@ impl RedisJwtStore {
 impl JwtStore for RedisJwtStore {
     async fn blacklist_token(&self, jwt_token: JwtRefreshToken) -> Result<(), Error> {
         let mut conn = self.pool.get()?;
-        
+
         let key = jwt_token.clone().raw.0;
         let exp = jwt_token.claims.exp.try_into().unwrap();
 
@@ -40,7 +40,8 @@ impl JwtStore for RedisJwtStore {
     }
 
     async fn is_blacklisted(&self, raw_token: RawJwtRefreshToken) -> Result<bool, Error> {
-        let mut conn = self.pool
+        let mut conn = self
+            .pool
             .get()
             .map_err(<r2d2::Error as std::convert::Into<Error>>::into)?;
 

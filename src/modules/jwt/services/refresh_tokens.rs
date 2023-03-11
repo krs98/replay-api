@@ -1,27 +1,51 @@
-use crate::{modules::jwt::{JwtRefreshToken, JwtAccessToken, JwtStore, AccessTokenSubject, RefreshTokenSubject}, Error, infra::{ServiceArgs, Service, Resolver}};
+use crate::{
+    infra::{Resolver, Service, ServiceArgs},
+    modules::jwt::{
+        AccessTokenSubject, JwtAccessToken, JwtRefreshToken, JwtStore, RefreshTokenSubject,
+    },
+    Error,
+};
 
-use super::EncodeTokens;
+use super::{EncodeTokens, EncodeTokensOutput};
 
 pub struct RefreshTokens {
+    pub refresh_token: JwtRefreshToken,
+}
+
+pub struct RefreshTokensOutput {
+    pub access_token: JwtAccessToken,
     pub refresh_token: JwtRefreshToken
 }
 
+impl std::convert::From<EncodeTokensOutput> for RefreshTokensOutput {
+    fn from(value: EncodeTokensOutput) -> Self {
+        RefreshTokensOutput { 
+            access_token: value.access_token, 
+            refresh_token: value.refresh_token
+        }
+    }
+}
+
 impl ServiceArgs for RefreshTokens {
-    type Output = Result<(JwtAccessToken, JwtRefreshToken), Error>;
+    type Output = Result<RefreshTokensOutput, Error>;
 }
 
 async fn execute(
     RefreshTokens { refresh_token }: RefreshTokens,
     encode_tokens_service: impl Service<EncodeTokens>,
-    jwt_store: impl JwtStore
-) -> Result<(JwtAccessToken, JwtRefreshToken), Error> {
+    jwt_store: impl JwtStore,
+) -> Result<RefreshTokensOutput, Error> {
     jwt_store.blacklist_token(refresh_token.clone()).await?;
 
     let username = refresh_token.claims.sub.into_inner();
-    encode_tokens_service.execute(EncodeTokens { 
-        access_token_subject: AccessTokenSubject(username.clone()), 
-        refresh_token_subject: RefreshTokenSubject(username) 
-    }).await
+
+    let encode_tokens_input = EncodeTokens {
+        access_token_subject: AccessTokenSubject(username.clone()),
+        refresh_token_subject: RefreshTokenSubject(username),
+    };
+    encode_tokens_service.execute(encode_tokens_input)
+        .await
+        .map(std::convert::Into::<RefreshTokensOutput>::into)
 }
 
 impl Resolver {

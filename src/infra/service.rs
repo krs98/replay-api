@@ -14,7 +14,7 @@ pub trait Service<Args: ServiceArgs> {
 }
 
 #[async_trait]
-impl<TArgs, TService, TFuture> Service<TArgs> for TService 
+impl<TArgs, TService, TFuture> Service<TArgs> for TService
 where
     TArgs: ServiceArgs + Send + 'static,
     TService: Fn(TArgs) -> TFuture + Send + Sync,
@@ -26,14 +26,11 @@ where
 }
 
 impl Resolver {
-    pub fn service<TArgs, TService, TFuture>(
-        &self, 
-        service: TService
-    ) -> impl Service<TArgs> 
-    where 
+    pub fn service<TArgs, TService, TFuture>(&self, service: TService) -> impl Service<TArgs>
+    where
         TArgs: ServiceArgs + Send + 'static,
         TService: Fn(Resolver, TArgs) -> TFuture + Send + Sync,
-        TFuture: Future<Output = TArgs::Output> + Send
+        TFuture: Future<Output = TArgs::Output> + Send,
     {
         let resolver = self.by_ref();
         move |input: TArgs| {

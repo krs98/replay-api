@@ -1,16 +1,7 @@
-use chrono::{Utc, DateTime};
 use serde::{Serialize, Deserialize};
 use validator::validate_email;
 
 use crate::modules::error::AppError;
-
-#[derive(sqlx::FromRow)]
-pub struct User {
-    pub username: Username,
-    pub email: Email,
-    pub password: Password,
-    pub created_at: DateTime<Utc>
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::Type)]
 pub struct Username(String);
@@ -18,6 +9,10 @@ pub struct Username(String);
 impl Username {
     pub fn into_inner(self) -> String {
         self.0
+    }
+
+    pub fn as_inner(&self) -> &str {
+        self.0.as_str()
     }
 }
 
@@ -28,23 +23,27 @@ impl TryFrom<String> for Username {
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
         if value.is_empty() {
-            return Err(AppError::UsernameIsEmpty)
-        }        
+            return Err(AppError::UsernameIsEmpty);
+        }
 
         if value.len() > MAX_USERNAME_LENGTH {
-            return Err(AppError::UsernameTooLong)
+            return Err(AppError::UsernameTooLong);
         }
 
         Ok(Username(value))
     }
 }
 
-#[derive(Debug, Clone, sqlx::Type)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::Type)]
 pub struct Email(String);
 
 impl Email {
     pub fn into_inner(self) -> String {
         self.0
+    }
+
+    pub fn as_inner(&self) -> &str {
+        self.0.as_str()
     }
 }
 
@@ -53,7 +52,7 @@ impl TryFrom<String> for Email {
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
         if !validate_email(&value) {
-            return Err(AppError::InvalidEmail)
+            return Err(AppError::InvalidEmail);
         }
 
         Ok(Email(value))
@@ -77,20 +76,30 @@ impl TryFrom<String> for Password {
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
         if value.len() < MIN_PASSWORD_LENGTH {
-            return Err(AppError::PasswordTooShort)
+            return Err(AppError::PasswordTooShort);
         }
 
         if value.len() > MAX_PASSWORD_LENGTH {
-            return Err(AppError::PasswordTooLong)
+            return Err(AppError::PasswordTooLong);
         }
 
         Ok(Password(value))
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::Type)]
+#[sqlx(transparent)]
+pub struct OAuthAccessToken(String);
+
+impl OAuthAccessToken {
+    pub fn into_inner(self) -> String {
+        self.0
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::modules::{error::AppError, users::model::Password};
+    use crate::modules::{error::AppError, users::Password};
 
     #[test]
     fn test_short_password() {
@@ -109,6 +118,6 @@ mod tests {
     #[test]
     fn test_valid_password() {
         let password = String::from("valid_password");
-        assert_eq!(password.clone().try_into(), Ok(Password(password)));
+        assert!(std::convert::TryInto::<Password>::try_into(password).is_ok());
     }
 }

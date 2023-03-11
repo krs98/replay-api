@@ -1,4 +1,8 @@
-use axum::{http::StatusCode, response::{Response, IntoResponse}, Json};
+use axum::{
+    http::StatusCode,
+    response::{IntoResponse, Response},
+    Json,
+};
 use serde_json::{json, Value};
 
 fn success(code: StatusCode, data: Value) -> Response {
@@ -43,3 +47,6 @@ pub fn internal_error(error: Value) -> Response {
     failure(StatusCode::INTERNAL_SERVER_ERROR, error)
 }
 
+pub fn not_implemented(error: Value) -> Response {
+    failure(StatusCode::NOT_IMPLEMENTED, error)
+}

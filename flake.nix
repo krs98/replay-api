@@ -24,11 +24,14 @@
             fish
             httpie
             jq
+            openssl.dev
             pgcli
+            pkg-config
             postgresql
             redis
-            rustc
             rust-analyzer
+            rustc
+            rustfmt
             sqlx-cli
           ];
 

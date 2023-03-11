@@ -1,7 +1,11 @@
-use crate::{modules::jwt::{JwtRefreshToken, JwtStore}, infra::{ServiceArgs, Resolver, Service}, Error};
+use crate::{
+    infra::{Resolver, Service, ServiceArgs},
+    modules::jwt::{JwtRefreshToken, JwtStore},
+    Error,
+};
 
 pub struct BlacklistRefreshToken {
-    pub refresh_token: JwtRefreshToken
+    pub refresh_token: JwtRefreshToken,
 }
 
 impl ServiceArgs for BlacklistRefreshToken {
@@ -10,7 +14,7 @@ impl ServiceArgs for BlacklistRefreshToken {
 
 async fn execute(
     BlacklistRefreshToken { refresh_token }: BlacklistRefreshToken,
-    jwt_store: impl JwtStore
+    jwt_store: impl JwtStore,
 ) -> Result<(), Error> {
     jwt_store.blacklist_token(refresh_token).await
 }
@@ -23,4 +27,3 @@ impl Resolver {
         })
     }
 }
-

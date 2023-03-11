@@ -1,18 +1,30 @@
-use crate::{modules::jwt::{AccessTokenSubject, RefreshTokenSubject, JwtAccessToken, JwtRefreshToken}, infra::{ServiceArgs, config, Service, Resolver}, Error};
+use crate::{
+    infra::{config, Resolver, Service, ServiceArgs},
+    modules::jwt::{AccessTokenSubject, JwtAccessToken, JwtRefreshToken, RefreshTokenSubject},
+    Error,
+};
 
 pub struct EncodeTokens {
     pub access_token_subject: AccessTokenSubject,
-    pub refresh_token_subject: RefreshTokenSubject
+    pub refresh_token_subject: RefreshTokenSubject,
+}
+
+pub struct EncodeTokensOutput {
+    pub access_token: JwtAccessToken,
+    pub refresh_token: JwtRefreshToken
 }
 
 impl ServiceArgs for EncodeTokens {
-    type Output = Result<(JwtAccessToken, JwtRefreshToken), Error>;
+    type Output = Result<EncodeTokensOutput, Error>;
 }
 
 async fn execute(
-    EncodeTokens { access_token_subject, refresh_token_subject }: EncodeTokens,
-    jwt_config: config::Jwt
-) -> Result<(JwtAccessToken, JwtRefreshToken), Error> {
+    EncodeTokens {
+        access_token_subject,
+        refresh_token_subject,
+    }: EncodeTokens,
+    jwt_config: config::Jwt,
+) -> Result<EncodeTokensOutput, Error> {
     let access_token = {
         let duration = jwt_config.access_token_duration;
         let signature = jwt_config.access_token_secret;
@@ -27,7 +39,8 @@ async fn execute(
         JwtRefreshToken::encode(refresh_token_subject, duration, signature)
     }?;
 
-    Ok((access_token, refresh_token))
+    let output = EncodeTokensOutput { access_token, refresh_token };
+    Ok(output)
 }
 
 impl Resolver {

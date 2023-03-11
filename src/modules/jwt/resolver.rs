@@ -1,20 +1,20 @@
 use std::sync::Arc;
 
-use crate::infra::{config, Resolver, Register, redis::RedisPool};
+use crate::infra::{config, redis::RedisPool, Register, Resolver};
 
-use super::{RedisJwtStore, store, JwtStore};
+use super::{store, JwtStore, RedisJwtStore};
 
 #[derive(Clone)]
 pub struct JwtResolver {
     jwt_config: Register<config::Jwt>,
-    jwt_store: Register<Arc<RedisJwtStore>>
+    jwt_store: Register<Arc<RedisJwtStore>>,
 }
 
 impl JwtResolver {
     pub fn new(jwt_config: config::Jwt, pool: RedisPool) -> Self {
-        JwtResolver { 
+        JwtResolver {
             jwt_config: Register::once(jwt_config),
-            jwt_store: Register::once(Arc::new(store::RedisJwtStore::new(pool)))
+            jwt_store: Register::once(Arc::new(store::RedisJwtStore::new(pool))),
         }
     }
 }

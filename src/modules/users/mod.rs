@@ -1,7 +1,7 @@
-pub mod model;
-mod store;
+pub mod domain;
 pub mod resolver;
+mod store;
 
-pub use self::model::*;
+pub use self::domain::*;
 
 pub(in crate::modules) use self::store::*;

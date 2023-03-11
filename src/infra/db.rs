@@ -11,7 +11,11 @@ pub async fn connect(config: config::Database) -> Result<PgPool, sqlx::Error> {
 
     sqlx::migrate!("./migrations")
         .run(&pool)
-        .await?;
+        .await
+        .map_err(|err| {
+            tracing::error!("{}", err);
+            err
+        })?;
 
     Ok(pool)
 }

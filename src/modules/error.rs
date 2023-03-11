@@ -1,11 +1,17 @@
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 use serde_json::json;
+use tracing::error;
 
 use crate::infra::response;
 
-use super::users::model::{MIN_PASSWORD_LENGTH, MAX_PASSWORD_LENGTH, MAX_USERNAME_LENGTH};
+use super::users::{
+    MAX_PASSWORD_LENGTH, 
+    MAX_USERNAME_LENGTH, 
+    MIN_PASSWORD_LENGTH
+};
 
-#[derive(Debug, Clone, thiserror::Error, Serialize)]
+// TODO: maybe use a custom deserializer?
+#[derive(Debug, Clone, thiserror::Error, Serialize, Deserialize)]
 pub enum Error {
     #[error("Sorry! Something went wrong while processing your request.")]
     Internal,
@@ -14,28 +20,36 @@ pub enum Error {
     #[error("{0}")]
     InvalidArgument(String),
     #[error("{0} already exists.")]
-    AlreadyExists(String)
+    AlreadyExists(String),
 }
 
 impl std::convert::From<sqlx::Error> for Error {
     fn from(err: sqlx::Error) -> Self {
+        error!("{}", err);
         match err {
             sqlx::Error::RowNotFound => Error::NotFound("Not found".into()),
-            _ => Error::Internal
+            _ => Error::Internal,
         }
     }
 }
 
 impl std::convert::From<redis::RedisError> for Error {
-    fn from(_: redis::RedisError) -> Self {
-        // TODO: provide better error report
+    fn from(err: redis::RedisError) -> Self {
+        error!("{}", err);
         Error::Internal
     }
 }
 
 impl std::convert::From<r2d2::Error> for Error {
-    fn from(_: r2d2::Error) -> Self {
-        // TODO: provide better error report
+    fn from(err: r2d2::Error) -> Self {
+        error!("{}", err);
+        Error::Internal
+    }
+}
+
+impl std::convert::From<reqwest::Error> for Error {
+    fn from(err: reqwest::Error) -> Self {
+        error!("{}", err);
         Error::Internal
     }
 }
@@ -44,7 +58,7 @@ impl std::convert::From<std::env::VarError> for Error {
     fn from(err: std::env::VarError) -> Self {
         match err {
             std::env::VarError::NotPresent => Error::NotFound("Env var".into()),
-            _ => Error::Internal
+            _ => Error::Internal,
         }
     }
 }
@@ -69,8 +83,9 @@ impl axum::response::IntoResponse for Error {
             Error::Internal => response::internal_error(msg),
             Error::NotFound(_) => response::not_found(msg),
             Error::AlreadyExists(_) => response::conflict(msg),
-            Error::InvalidArgument(_) => response::bad_request(msg)
-        }.into_response()
+            Error::InvalidArgument(_) => response::bad_request(msg),
+        }
+        .into_response()
     }
 }
 
@@ -92,6 +107,9 @@ pub enum AppError {
     InvalidEmail,
     PasswordTooShort,
     PasswordTooLong,
+
+    // login connection
+    LoginConnectionAlreadyExists
 }
 
 impl std::convert::From<AppError> for Error {
@@ -103,33 +121,39 @@ impl std::convert::From<AppError> for Error {
             AppError::InvalidPassword => Error::InvalidArgument(String::from("Invalid password.")),
 
             // jwt
-            AppError::RefreshTokenIsNoLongerValid => Error::InvalidArgument(String::from("Token is no longer valid.")),
+            AppError::RefreshTokenIsNoLongerValid => {
+                Error::InvalidArgument(String::from("Token is no longer valid."))
+            }
 
             // user
             AppError::UserAlreadyExists => Error::AlreadyExists(String::from("User")),
             AppError::UserNotFound => Error::NotFound(String::from("User")),
-            AppError::UsernameIsEmpty => Error::InvalidArgument(String::from("Username cannot be empty.")),
+            AppError::UsernameIsEmpty => {
+                Error::InvalidArgument(String::from("Username cannot be empty."))
+            }
             AppError::UsernameTooLong => {
-                let msg = format!(
-                    "Username must be at most {MAX_USERNAME_LENGTH} characters long."
-                );
+                let msg =
+                    format!("Username must be at most {MAX_USERNAME_LENGTH} characters long.");
 
                 Error::InvalidArgument(msg)
             }
             AppError::InvalidEmail => Error::InvalidArgument(String::from("Invalid email.")),
             AppError::PasswordTooShort => {
-                let msg = format!(
-                    "Password must be at least {MIN_PASSWORD_LENGTH} characters long."
-                );
+                let msg =
+                    format!("Password must be at least {MIN_PASSWORD_LENGTH} characters long.");
 
                 Error::InvalidArgument(msg)
-            },
+            }
             AppError::PasswordTooLong => {
-                let msg = format!(
-                    "Password must be at most {MAX_PASSWORD_LENGTH} characters long."
-                );
+                let msg =
+                    format!("Password must be at most {MAX_PASSWORD_LENGTH} characters long.");
 
                 Error::InvalidArgument(msg)
+            }
+
+            // login connection
+            AppError::LoginConnectionAlreadyExists => {
+                Error::AlreadyExists(String::from("Login connection"))
             }
         }
     }

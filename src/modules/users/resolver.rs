@@ -4,17 +4,20 @@ use sqlx::PgPool;
 
 use crate::infra::{Register, Resolver};
 
-use super::{store::{PgUserStore, self}, UserStore};
+use super::{
+    store::{self, PgUserStore},
+    UserStore,
+};
 
 #[derive(Clone)]
 pub struct UsersResolver {
-    user_store: Register<Arc<PgUserStore>>
+    user_store: Register<Arc<PgUserStore>>,
 }
 
 impl UsersResolver {
     pub fn new(pool: PgPool) -> Self {
-        UsersResolver { 
-            user_store: Register::once(Arc::new(store::PgUserStore::new(pool)))
+        UsersResolver {
+            user_store: Register::once(Arc::new(store::PgUserStore::new(pool))),
         }
     }
 }

@@ -1,7 +1,14 @@
-use crate::{infra::{ServiceArgs, config, Service, Resolver}, Error, modules::{jwt::{JwtRefreshToken, RawJwtRefreshToken, JwtStore}, error::AppError}};
+use crate::{
+    infra::{config, Resolver, Service, ServiceArgs},
+    modules::{
+        error::AppError,
+        jwt::{JwtRefreshToken, JwtStore, RawJwtRefreshToken},
+    },
+    Error,
+};
 
 pub struct DecodeRefreshToken {
-    pub raw_jwt: RawJwtRefreshToken
+    pub raw_jwt: RawJwtRefreshToken,
 }
 
 impl ServiceArgs for DecodeRefreshToken {
@@ -11,14 +18,14 @@ impl ServiceArgs for DecodeRefreshToken {
 async fn execute(
     DecodeRefreshToken { raw_jwt }: DecodeRefreshToken,
     jwt_config: config::Jwt,
-    jwt_store: impl JwtStore
+    jwt_store: impl JwtStore,
 ) -> Result<JwtRefreshToken, Error> {
     let is_blacklisted = jwt_store.is_blacklisted(raw_jwt.clone()).await?;
     if is_blacklisted {
-        return Err(AppError::RefreshTokenIsNoLongerValid.into())
+        return Err(AppError::RefreshTokenIsNoLongerValid.into());
     }
 
-    let signature = jwt_config.refresh_token_secret;  
+    let signature = jwt_config.refresh_token_secret;
     JwtRefreshToken::decode(raw_jwt, signature)
 }
 

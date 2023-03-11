@@ -1,20 +1,34 @@
 use async_trait::async_trait;
-use axum::{extract::FromRequestParts, http::request::Parts, headers::{Authorization, authorization::Bearer}, TypedHeader, Extension, response::{Response, IntoResponse}};
+use axum::{
+    extract::FromRequestParts,
+    headers::{authorization::Bearer, Authorization},
+    http::request::Parts,
+    response::{IntoResponse, Response},
+    Extension, TypedHeader,
+};
 
-use crate::{infra::{App, Service}, modules::jwt::{RawJwtAccessToken, DecodeAccessToken, JwtAccessToken, JwtRefreshToken, DecodeRefreshToken, RawJwtRefreshToken}};
+use crate::{
+    infra::{App, Service},
+    modules::jwt::{
+        DecodeAccessToken, DecodeRefreshToken, JwtAccessToken, JwtRefreshToken, RawJwtAccessToken,
+        RawJwtRefreshToken,
+    },
+};
 
 pub struct ExtractJwtAccessToken(pub JwtAccessToken);
 
 #[async_trait]
 impl<S> FromRequestParts<S> for ExtractJwtAccessToken
-where S: Send + Sync
+where
+    S: Send + Sync,
 {
     type Rejection = Response;
 
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
-        let TypedHeader(Authorization(bearer)) = TypedHeader::<Authorization<Bearer>>::from_request_parts(parts, state)
-            .await
-            .map_err(|err| err.into_response())?;
+        let TypedHeader(Authorization(bearer)) =
+            TypedHeader::<Authorization<Bearer>>::from_request_parts(parts, state)
+                .await
+                .map_err(|err| err.into_response())?;
 
         let Extension(app) = Extension::<App>::from_request_parts(parts, state)
             .await
@@ -36,14 +50,16 @@ pub struct ExtractJwtRefreshToken(pub JwtRefreshToken);
 
 #[async_trait]
 impl<S> FromRequestParts<S> for ExtractJwtRefreshToken
-where S: Send + Sync
+where
+    S: Send + Sync,
 {
     type Rejection = Response;
 
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
-        let TypedHeader(Authorization(bearer)) = TypedHeader::<Authorization<Bearer>>::from_request_parts(parts, state)
-            .await
-            .map_err(|err| err.into_response())?;
+        let TypedHeader(Authorization(bearer)) =
+            TypedHeader::<Authorization<Bearer>>::from_request_parts(parts, state)
+                .await
+                .map_err(|err| err.into_response())?;
 
         let Extension(app) = Extension::<App>::from_request_parts(parts, state)
             .await

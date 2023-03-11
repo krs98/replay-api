@@ -4,10 +4,9 @@ use super::config;
 
 pub type RedisPool = r2d2::Pool<redis::Client>;
 
-pub fn connect(config: config::Redis) -> Result<r2d2::Pool<redis::Client>, Error>  {
-    let redis_client = redis::Client::open(config.url).map_err(
-        std::convert::Into::<Error>::into
-    )?;
+pub fn connect(config: config::Redis) -> Result<r2d2::Pool<redis::Client>, Error> {
+    let redis_client =
+        redis::Client::open(config.url).map_err(std::convert::Into::<Error>::into)?;
 
     r2d2::Pool::builder()
         .max_size(config.pool_size)
