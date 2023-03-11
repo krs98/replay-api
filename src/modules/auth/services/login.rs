@@ -57,7 +57,7 @@ async fn execute(
             let id = user_id_provider.get();
             let OAuthUserResponse { username, email } = user_response;
 
-            User::new(*id.as_inner(), username, email, login_connection)
+            User::new(id, username, email, login_connection)
         }
     };
 

@@ -1,6 +1,8 @@
 use std::marker::PhantomData;
 
 use serde::{Serialize, Serializer};
+use sqlx::{Decode, Database};
+use tracing::debug;
 
 #[derive(Debug)]
 pub struct Id<T>(i64, PhantomData<T>);
@@ -20,6 +22,17 @@ impl<T> Id<T> {
 impl<T> sqlx::Type<sqlx::Postgres> for Id<T> {
     fn type_info() -> <sqlx::Postgres as sqlx::Database>::TypeInfo {
         <i64 as sqlx::Type<sqlx::Postgres>>::type_info()
+    }
+}
+
+impl<'r, DB: Database, T> sqlx::Decode<'r, DB> for Id<T> 
+where i64: Decode<'r, DB>
+{
+    fn decode(
+        value: <DB as sqlx::database::HasValueRef<'r>>::ValueRef
+    ) -> Result<Self, sqlx::error::BoxDynError> {
+        let value = <i64 as Decode<DB>>::decode(value)?;
+        Ok(Id::<T>::new(value))
     }
 }
 

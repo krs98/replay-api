@@ -6,7 +6,7 @@ use super::{Username, Email, OAuthAccessToken};
 
 #[derive(Debug, sqlx::FromRow)]
 pub struct User {
-    pub id: i64,
+    pub id: Id<User>,
     pub username: Username,
     pub email: Option<Email>,
     pub created_at: DateTime<Utc>,
@@ -15,7 +15,7 @@ pub struct User {
 
 #[derive(Debug, sqlx::FromRow, sqlx::Type)]
 pub struct LoginConnection {
-    pub id: i64,
+    pub id: Id<LoginConnection>,
     pub provider: OAuthProvider,
     pub access_token: OAuthAccessToken,
     pub created_at: DateTime<Utc>,
@@ -24,7 +24,7 @@ pub struct LoginConnection {
 
 impl User {
     pub fn new(
-        id: i64,
+        id: Id<User>,
         username: Username,
         email: Option<Email>,
         login_connection: LoginConnection 
@@ -64,7 +64,7 @@ impl LoginConnection {
         access_token: OAuthAccessToken
     ) -> Self {
         LoginConnection { 
-            id: 0,
+            id,
             provider, 
             access_token, 
             created_at: Utc::now(), 

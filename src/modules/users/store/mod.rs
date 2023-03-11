@@ -1,9 +1,10 @@
-use crate::modules::error::Error;
+use crate::{modules::error::Error, infra::id::Id};
 
 use super::{User, LoginConnection, Username, Email};
 use async_trait::async_trait;
 use auto_impl::auto_impl;
 use sqlx::{PgPool, PgExecutor, QueryBuilder};
+use tracing::debug;
 
 #[async_trait]
 #[auto_impl(&, Arc)]
@@ -30,7 +31,7 @@ impl UserStore for PgUserStore {
             User,
             r#"
                 select 
-                    u.id,
+                    u.id as "id: Id<User>",
                     u.username as "username: Username", 
                     u.email as "email: Email", 
                     u.created_at, 
@@ -56,7 +57,7 @@ impl UserStore for PgUserStore {
 
     async fn save(&self, user: &User) -> Result<(), Error> {
         let mut transaction = self.pool.begin().await?;
-        save_user_root(&mut transaction, user).await?; 
+        save_root(&mut transaction, user).await?; 
         save_login_connections(&mut transaction, user, &user.login_connections).await?;
         transaction.commit().await?;
 
@@ -65,7 +66,7 @@ impl UserStore for PgUserStore {
 
 }
 
-async fn save_user_root<'c, E: PgExecutor<'c>>(executor: E, user: &User) -> Result<(), Error> {
+async fn save_root<'c, E: PgExecutor<'c>>(executor: E, user: &User) -> Result<(), Error> {
     sqlx::query!(
         r#"
             insert into users (id, username, email, created_at) values ($1, $2, $3, $4)
@@ -73,7 +74,7 @@ async fn save_user_root<'c, E: PgExecutor<'c>>(executor: E, user: &User) -> Resu
             update set username = excluded.username, 
                        email = excluded.email
         "#,
-        0,
+        user.id.as_inner(),
         user.username.as_inner(),
         user.email.as_ref().map(|email| email.as_inner()),
         user.created_at
@@ -97,8 +98,8 @@ async fn save_login_connections<'c, E: PgExecutor<'c>>(
     );
 
     let query = builder.push_values(login_connections, |mut builder, connection| {
-        builder.push_bind(connection.id)
-            .push_bind(user.id)
+        builder.push_bind(connection.id.as_inner())
+            .push_bind(user.id.as_inner())
             .push_bind(&connection.provider)
             .push_bind(&connection.access_token)
             .push_bind(connection.created_at)
