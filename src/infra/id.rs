@@ -2,7 +2,6 @@ use std::marker::PhantomData;
 
 use serde::{Serialize, Serializer};
 use sqlx::{Decode, Database};
-use tracing::debug;
 
 #[derive(Debug)]
 pub struct Id<T>(i64, PhantomData<T>);
@@ -16,6 +15,10 @@ impl<T> Id<T> {
 impl<T> Id<T> {
     pub fn as_inner(&self) -> &i64 {
         &self.0
+    }
+
+    pub fn into_inner(self) -> i64 {
+        self.0
     }
 }
 
