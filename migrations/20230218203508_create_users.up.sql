@@ -9,7 +9,7 @@ create type oauth_provider as enum ('github', 'gitlab', 'bitbucket');
 
 create table if not exists login_connections (
   id bigint primary key,
-  user_id bigint references users not null,
+  user_id bigint not null references users on delete cascade,
   provider oauth_provider not null,
   access_token text not null,
   created_at timestamp with time zone not null,
