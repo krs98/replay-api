@@ -1,7 +1,9 @@
 use axum::{Extension, response::IntoResponse};
+use axum_extra::extract::CookieJar;
 use chrono::{Utc, DateTime};
 use serde::Serialize;
 use serde_json::json;
+use tracing::debug;
 
 use crate::{api::extractors::ExtractJwtAccessToken, infra::{App, response, Service}, modules::users::{GetAuthdUser, Email, GetAuthdUserOutput}, Error};
 
@@ -35,6 +37,7 @@ impl IntoResponse for MeResponse {
 
 pub async fn me(
     Extension(app): Extension<App>,
+    cookie_jar: CookieJar,
     ExtractJwtAccessToken(jwt): ExtractJwtAccessToken
 ) -> impl IntoResponse {
     let get_authd_user_service = app.resolver.get_authd_user_service();

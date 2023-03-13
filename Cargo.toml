@@ -9,6 +9,7 @@ edition = "2021"
 async-trait = "0.1.64"
 auto_impl = "1.0.1"
 axum = { version = "0.6.7", features = ["headers"] }
+axum-extra = { version = "0.7.0", features = ["cookie"] }
 chrono = { version = "0.4.23", features = ["serde"] }
 dotenv = "0.15.0"
 hyper = "0.14.24"

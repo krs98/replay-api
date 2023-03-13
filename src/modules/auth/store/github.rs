@@ -60,17 +60,23 @@ impl OAuthStore for GithubOAuthStore {
         let request = GithubLoginRequest { 
             client_id: self.oauth_config.client_id.as_str(),
             client_secret: self.oauth_config.client_secret.as_str(),
-            code,
+            code: code.clone(),
         };
 
-        let response: GithubLoginResponse = self.reqwest
+        let response: String = self.reqwest
             .post("https://github.com/login/oauth/access_token")
             .header("accept", "application/json")
             .json(&request)
             .send()
             .await?
-            .json()
+            .text()
             .await?;
+
+        debug!("{} {:?}", response, code);
+
+        let response: GithubLoginResponse = serde_json::from_str(response.as_str()).map_err(|err| {
+            Error::Internal
+        })?;
 
         Ok(response.into())
     }
